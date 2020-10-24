@@ -14,6 +14,11 @@ namespace ASP_23_LabDz_Core
     {
         // This method gets called by the runtime. Use this method to add services to the container.
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
+        public readonly IWebHostEnvironment _enw;
+        public Startup(IWebHostEnvironment enw)
+        {//Мы обеспечим после вызова констр ссылку на среду где развернуто наше прилож
+            this._enw = enw;
+        }
         public void ConfigureServices(IServiceCollection services)
         {
             //Зарегестрировать сервисы по умолчанию для сервисов для управления БД
@@ -24,21 +29,59 @@ namespace ASP_23_LabDz_Core
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            if (env.IsDevelopment())
-            {
-                
-                app.UseDeveloperExceptionPage();
-            }
+            //env.EnvironmentName = Environments.Production;//Поидее так можно установить состояние проекта
+            //Настройка состояния проекта Project/'NameAppProperties/Debug/Enviroment variables'
+            //if (env.IsDevelopment())
+            //{
 
-            app.UseRouting();
-            app.Map()
-            app.UseEndpoints(endpoints =>
+            //    app.UseDeveloperExceptionPage();
+            //}
+
+            //app.UseRouting();
+            //app.Map("Index", Index);//Вноситсятся элементы в проект
+            //app.UseEndpoints(endpoints =>
+            //{
+            //    endpoints.MapGet("/", async context =>
+            //    {
+            //        await context.Response.WriteAsync("Uploaded to Github!");
+            //    });
+            //});
+
+            //Элементы middleWare
+            int x = 5, y = 10, z= 0;
+            //app.Use() использует делегат
+            //Первый параметр обобщенного делегата имеет входной параметр,
+            //Второй выходной
+            //Он принимает context
+            app.Use(async(context, next) =>//Когда прийдёт входящи HTTP запрос он обработается в методе USe
             {
-                endpoints.MapGet("/", async context =>
-                {
-                    await context.Response.WriteAsync("Hello World!");
-                });
+                z =x + y;
+                //После вызовется метод Invoke() который передаст управление
+                //следующему уровню middleWare app.Run в нашем случае
+                //Что такое конвеерность обработки запросов:
+                //, next второй параметр как бы запускает следующий метод middleWare внутри своего "тела"
+                await next.Invoke();
+                //Не рекомендуется внутри Use описывать context.Response.WriteAsync. 
+                //Так как следующий после Use, context.Response.WriteAsync
+                //объединится со следующим через next.Invoke();
+
+                //Речь идет о Content.Length он будет неверным
+               // Запись ответа должна быть только в одном месте
+            });
+            app.Run(async (context)=> //Добавляет конеченое программное обеспечение в цепь обработки запросов приложением
+            {
+                //В этом контексте запроса есть доступ к параметры запроса
+
+                //await context.Response.WriteAsync($"<p>Hello world from {_enw.ApplicationName}.</p><p>Now app in {env.EnvironmentName}</p>");
+                x *= 2;
+                await context.Response.WriteAsync($"x = {x}");
             });
         }
+
+
+        //private static async Task Index(IApplicationBuilder app)
+        //{
+        //    await app.
+        //}
     }
 }
